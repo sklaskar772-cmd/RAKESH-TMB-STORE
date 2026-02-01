@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAKESH PREMIUM STORE</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        .header {
+            background-color: #ffffff;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            border-bottom: 2px solid #0056b3;
+        }
+        .header h1 { color: #0056b3; margin: 0; font-size: 22px; }
+        #adminBox {
+            display: none;
+            background: white;
+            margin: 20px auto;
+            padding: 20px;
+            width: 90%;
+            max-width: 500px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border-top: 5px solid #0056b3;
+        }
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            border: 1px solid #eee;
+            position: relative;
+        }
+        .card img { width: 100%; height: 220px; object-fit: cover; }
+        .card-body { padding: 15px; text-align: left; }
+        .card h3 { margin: 0 0 10px; font-size: 18px; color: #0056b3; }
+        .price { font-size: 20px; font-weight: bold; color: #2ecc71; margin-bottom: 10px; }
+        .btn {
+            background: #0056b3;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+            font-weight: bold;
+        }
+        .cut-btn {
+            position: absolute;
+            top: 10px; right: 10px;
+            background: rgba(255,0,0,0.8);
+            color: white; border: none;
+            border-radius: 50%; width: 25px; height: 25px;
+            cursor: pointer; font-weight: bold;
+        }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; }
+        .modal-content {
+            background: white;
+            margin: 10% auto;
+            padding: 25px;
+            width: 90%;
+            max-width: 400px;
+            border-radius: 15px;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>RAKESH PREMIUM STORE 🛒</h1>
+    <button onclick="checkBoss()" style="background:#f8f9fa; border:1px solid #ddd; padding:5px 10px; border-radius:5px; cursor:pointer;">Admin</button>
+</div>
+
+<div id="adminBox">
+    <h2 style="text-align:center; color:#0056b3;">Boss Panel</h2>
+    <input type="text" id="pName" placeholder="Item ka Naam">
+    <input type="text" id="pPrice" placeholder="Price (₹)">
+    <input type="text" id="pImg" placeholder="Photo Link">
+    <button class="btn" onclick="saveItem()" style="padding:15px;">Add Product</button>
+</div>
+
+<div class="product-grid" id="storeGrid"></div>
+
+<div id="orderPop" class="modal">
+    <div class="modal-content">
+        <h3 id="orderTag" style="color:#0056b3; margin-top:0;">Order Karein</h3>
+       <input type="text" id="uName"
+
+        placeholder="Aapka Naam">
+
+<input type="text" id="uPapa"
+
+placeholder="Papa Ka Naam">
+
+<input type="text" id="uPhone"
+
+placeholder="Phone Number">
+
+<input type="text" id="uAlt"
+
+placeholder="Alternate Number">
+
+<input type="text" id="uRoad"
+
+placeholder="Village / Road">
+
+<input type="text" id="uMohalla"
+
+placeholder="Mohalla / Gali">
+
+<input type="text" id="uArea"
+
+placeholder="Area / State">
+
+<input type="number" id="uPin" placeholder="Area Pin Code (6 digits)" required>
+
+<button class="btn"
+        <button class="btn" onclick="confirmWhatsApp()" style="margin-top:10px; background:#25D366; padding:15px;">Order via WhatsApp</button>
+        <button onclick="document.getElementById('orderPop').style.display='none'" style="width:100%; margin-top:10px; background:none; border:none; color:gray; cursor:pointer;">Cancel</button>
+    </div>
+</div>
+
+<script>
+    let activeItem = "";
+
+    function checkBoss() {
+        let pass = prompt("Password Daalein:");
+        if (pass === "RAKESH_TMB") {
+            document.getElementById('adminBox').style.display = 'block';
+        }
+    }
+
+    function saveItem() {
+        let n = document.getElementById('pName').value;
+        let p = document.getElementById('pPrice').value;
+        let i = document.getElementById('pImg').value || "https://via.placeholder.com/250";
+
+        if (n && p) {
+            let grid = document.getElementById('storeGrid');
+            grid.innerHTML += `
+                <div class="card">
+                    <button class="cut-btn" onclick="this.parentElement.remove()">X</button>
+                    <img src="${i}">
+                    <div class="card-body">
+                        <h3>${n}</h3>
+                        <div class="price">₹${p}</div>
+                        <button class="btn" onclick="openOrder('${n}')">Buy Now</button>
+                    </div>
+                </div>`;
+            document.getElementById('pName').value = "";
+            document.getElementById('pPrice').value = "";
+            document.getElementById('pImg').value = "";
+        }
+    }
+
+    function openOrder(n) {
+        activeItem = n;
+        document.getElementById('orderTag').innerText = n + " Order Karein";
+        document.getElementById('orderPop').style.display = 'block';
+    }
+
+   function confirmWhatsApp() {
+    // 1. Pehle saare values uthayenge
+    let name = document.getElementById('uName').value;
+    let ph = document.getElementById('uPhone').value;
+    let pin = document.getElementById('uPin').value;
+    let landmark = document.getElementById('uLandmark').value;
+
+    // 2. Check karenge (Yahan 'if' ke baad shuru wala bracket '(' lagana zaroori hai)
+    if (name !== "" && ph !== "" && pin !== "") {
+        
+        // 3. Message banane ka sabse simple tareeka (No Errors)
+        let msg = "NEW ORDER" + "%0A" + 
+                  "Item: " + activeItem + "%0A" + 
+                  "Name: " + name + "%0A" + 
+                  "Landmark: " + landmark + "%0A" + 
+                  "Pin: " + pin;
+
+        window.open("https://wa.me/917439719709?text=" + msg); // Apna number daalna
+
+    } else {
+        alert("Bhai, Sab bhariye!"); 
+    }
+} // <--- Ye aakhri bracket zaroori hai function band karne ke liye
+
+</script>
+</body>
+</html>
