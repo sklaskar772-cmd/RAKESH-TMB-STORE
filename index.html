@@ -95,12 +95,98 @@
     <button onclick="checkBoss()" style="background:#f8f9fa; border:1px solid #ddd; padding:5px 10px; border-radius:5px; cursor:pointer;">Admin</button>
 </div>
 
-<div id="adminBox">
-    <h2 style="text-align:center; color:#0056b3;">Boss Panel</h2>
-    <input type="text" id="pName" placeholder="Item ka Naam">
-    <input type="text" id="pPrice" placeholder="Price (₹)">
-    <input type="text" id="pImg" placeholder="Photo Link">
-    <button class="btn" onclick="saveItem()" style="padding:15px;">Add Product</button>
+<div id="adminBox" style="text-align:center; padding:20px; border:2px solid #0056b3; border-radius:10px; background:#f9f9f9; max-width:400px; margin:20px auto;">
+    <h3 style="color:#0056b3; margin-bottom:15px;">Boss Panel (Excel Store)</h3>
+    
+    <input type="text" id="pName" placeholder="Item ka Naam" style="width:90%; padding:10px; margin-bottom:10px; border:1px solid #ccc; border-radius:5px;">
+    
+    <input type="number" id="pPrice" placeholder="Price (₹)" style="width:90%; padding:10px; margin-bottom:10px; border:1px solid #ccc; border-radius:5px;">
+    
+    <div style="margin:15px 0;">
+        <input type="file" id="imageFiles" accept="image/*" multiple style="display:none;">
+        <button type="button" onclick="document.getElementById('imageFiles').click()" style="background:#fff; border:1px solid #0056b3; color:#0056b3; padding:10px; border-radius:5px; cursor:pointer; width:95%;">
+            📸 Gallery se 3-4 Photo Select Karein
+        </button>
+        <p id="fileCount" style="font-size:12px; color:gray; margin-top:5px;">Koi photo select nahi hui</p>
+    </div>
+
+    <button id="mainSaveBtn" onclick="processAndSave()" style="width:95%; padding:15px; background:#0056b3; color:white; border:none; border-radius:5px; font-weight:bold; cursor:pointer;">
+        Save to Excel Sheet
+    </button>
+    
+    <p id="loadingStatus" style="font-size:13px; color:blue; margin-top:10px; font-weight:bold;"></p>
+</div>
+
+<script>
+// Jab user photo select karega toh count dikhayega
+document.getElementById('imageFiles').addEventListener('change', function() {
+    let count = this.files.length;
+    document.getElementById('fileCount').innerText = count + " photos select ho gayi hain";
+});
+
+async function processAndSave() {
+    const name = document.getElementById('pName').value;
+    const price = document.getElementById('pPrice').value;
+    const files = document.getElementById('imageFiles').files;
+    const status = document.getElementById('loadingStatus');
+    const btn = document.getElementById('mainSaveBtn');
+
+    if(!name || !price || files.length === 0) {
+        alert("Bhai, Naam, Price aur Photo teeno cheezein zaroori hain!");
+        return;
+    }
+
+    // Button ko disable kar rahe hain taaki bar-bar click na ho
+    btn.disabled = true;
+    btn.style.background = "gray";
+    status.innerText = "Photos upload ho rahi hain... thoda wait karein.";
+
+    let imgLinks = [];
+
+    try {
+        // Step 1: Photos ko ImgBB par upload karna
+        for (let file of files) {
+            let formData = new FormData();
+            formData.append("image", file);
+            let res = await fetch("https://api.imgbb.com/1/upload?key=6978589700344464ba95f082e16497f6", {
+                method: "POST",
+                body: formData
+            });
+            let data = await res.json();
+            if(data.success) {
+                imgLinks.push(data.data.url);
+            }
+        }
+
+        // Step 2: Google Sheet mein data bhejna
+        // IS URL KO APNE "WEB APP URL" SE BADAL DENA
+        const SHEET_URL = "https://script.google.com/macros/s/AKfycbwrtF4ZwOz5QCVz76h2d0eyd2CxBAgBioqskMps7Nay-C8vKnzzw_V2ZBLGsm6lqx6X/exec"; 
+
+        status.innerText = "Excel Sheet mein save ho raha hai...";
+        
+        await fetch(SHEET_URL, {
+            method: "POST",
+            mode: "no-cors", 
+            body: JSON.stringify({ 
+                name: name, 
+                price: price, 
+                images: imgLinks.join(",") 
+            })
+        });
+
+        alert("Mubarak ho! Item Excel mein save ho gaya. ✅");
+        location.reload(); // Page refresh kar dega
+
+    } catch (error) {
+        alert("Kuch error aaya hai! Internet check karein.");
+        console.log(error);
+    } finally {
+        btn.disabled = false;
+        btn.style.background = "#0056b3";
+        status.innerText = "";
+    }
+}
+</script>
 </div>
 
 <div class="product-grid" id="storeGrid"></div>
@@ -143,7 +229,65 @@ placeholder="Area / State">
         <button onclick="document.getElementById('orderPop').style.display='none'" style="width:100%; margin-top:10px; background:none; border:none; color:gray; cursor:pointer;">Cancel</button>
     </div>
 </div>
+<script>
+function uploadAndSave() {
+    var name = document.getElementById('pName').value;
+    var price = document.getElementById('pPrice').value;
+    var files = document.getElementById('pFiles').files;
+    var msg = document.getElementById('msg');
+    var btn = document.getElementById('saveBtn');
 
+    if (name == "" || price == "" || files.length == 0) {
+        alert("Bhai, sab kuch bharo!");
+        return;
+    }
+
+    btn.disabled = true;
+    btn.innerText = "Uploading... Wait karein";
+    msg.innerText = "Photos upload ho rahi hain...";
+
+    var uploadedLinks = [];
+    var count = 0;
+
+    // Har photo ko upload karne ke liye loop
+    for (var i = 0; i < files.length; i++) {
+        var formData = new FormData();
+        formData.append("image", files[i]);
+
+        // ImgBB API call
+        fetch("https://api.imgbb.com/1/upload?key=6978589700344464ba95f082e16497f6", {
+            method: "POST",
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                uploadedLinks.push(data.data.url);
+            }
+            count++;
+            
+            // Jab saari photos upload ho jayein
+            if (count == files.length) {
+                saveToDatabase(name, price, uploadedLinks.join(","));
+            }
+        })
+        .catch(err => {
+            alert("Upload failed! Internet check karein.");
+            btn.disabled = false;
+        });
+    }
+}
+
+function saveToDatabase(name, price, allLinks) {
+    // Yahan aapka purana database wala code aayega
+    // Example: firebase.database().ref('products').push({ name: name, price: price, img: allLinks });
+    
+    console.log("Saving:", name, price, allLinks);
+    document.getElementById('msg').innerText = "Item Successfully Saved!";
+    document.getElementById('saveBtn').disabled = false;
+    document.getElementById('saveBtn').innerText = "Save Item";
+}
+</script>
 <script>
     let activeItem = "";
 
